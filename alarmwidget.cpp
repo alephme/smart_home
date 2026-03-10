@@ -11,8 +11,6 @@
 #include <QSpinBox>
 #include <QTimer>
 #include <QMessageBox>
-#include <QSound>
-#include <QDateTime>
 
 AlarmWidget::AlarmWidget(QWidget* parent) : QWidget(parent) {
     setupUI();

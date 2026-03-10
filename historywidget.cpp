@@ -14,6 +14,9 @@
 #include <QFileDialog>
 #include <QFile>
 #include <QTextStream>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QStringConverter>
+#endif
 #include <QMessageBox>
 #include <QDate>
 
@@ -134,7 +137,11 @@ void HistoryWidget::onExport() {
         QMessageBox::warning(this, "错误", "无法打开文件写入"); return;
     }
     QTextStream ts(&file);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    ts.setEncoding(QStringConverter::Utf8);
+#else
     ts.setCodec("UTF-8");
+#endif
     // 写表头
     QStringList headers;
     for (int c = 0; c < m_table->columnCount(); c++)
