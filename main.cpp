@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QGuiApplication>
 #include <QFont>
 #include <QFile>
 #include <QIcon>
@@ -6,6 +7,14 @@
 #include "mainwindow.h"
 
 int main(int argc, char* argv[]) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#else
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+#endif
+
     QApplication app(argc, argv);
     app.setApplicationName("智能家居监控平台");
     app.setApplicationVersion("1.0");
@@ -13,6 +22,8 @@ int main(int argc, char* argv[]) {
     QIcon appIcon;
     if (QFile::exists(":/icons/app.ico")) {
         appIcon = QIcon(":/icons/app.ico");
+    } else if (QFile::exists(":/icons/smarthome.ico")) {
+        appIcon = QIcon(":/icons/smarthome.ico");
     }
     if (appIcon.isNull()) {
         appIcon = app.style()->standardIcon(QStyle::SP_ComputerIcon);
@@ -22,7 +33,7 @@ int main(int argc, char* argv[]) {
     // 全局字体
     QFont font;
     font.setFamily("Microsoft YaHei");
-    font.setPixelSize(13);
+    font.setPointSize(10);
     app.setFont(font);
 
     // 全局样式
