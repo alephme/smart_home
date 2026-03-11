@@ -132,28 +132,38 @@ void HistoryWidget::onExport() {
     QString path = QFileDialog::getSaveFileName(this, "导出CSV", "operation_log.csv",
                                                 "CSV文件 (*.csv)");
     if (path.isEmpty()) return;
+
     QFile file(path);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, "错误", "无法打开文件写入"); return;
+        QMessageBox::warning(this, "错误", "无法打开文件写入");
+        return;
     }
+
+    // 写入 UTF-8 BOM，使 Excel 正确识别编码
+    file.write("\xEF\xBB\xBF");
+
     QTextStream ts(&file);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     ts.setEncoding(QStringConverter::Utf8);
 #else
     ts.setCodec("UTF-8");
 #endif
+
     // 写表头
     QStringList headers;
-    for (int c = 0; c < m_table->columnCount(); c++)
+    for (int c = 0; c < m_table->columnCount(); ++c)
         headers << m_table->horizontalHeaderItem(c)->text();
     ts << headers.join(",") << "\n";
+
     // 写数据
-    for (int r = 0; r < m_table->rowCount(); r++) {
+    for (int r = 0; r < m_table->rowCount(); ++r) {
         QStringList row;
-        for (int c = 0; c < m_table->columnCount(); c++)
-            row << (m_table->item(r,c) ? m_table->item(r,c)->text() : "");
+        for (int c = 0; c < m_table->columnCount(); ++c)
+            row << (m_table->item(r, c) ? m_table->item(r, c)->text() : "");
         ts << row.join(",") << "\n";
     }
+
     file.close();
-    QMessageBox::information(this, "成功", QString("已导出 %1 条记录到:\n%2").arg(m_table->rowCount()).arg(path));
+    QMessageBox::information(this, "成功",
+                             QString("已导出 %1 条记录到:\n%2").arg(m_table->rowCount()).arg(path));
 }
