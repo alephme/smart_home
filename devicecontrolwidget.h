@@ -52,6 +52,8 @@ private:
     int m_dragRow = -1;
     bool m_cardDragging = false;
     bool m_suppressCardClick = false;
+    class QLabel* m_dragGhost = nullptr;
+    QPoint m_dragHotspot;
 
     class QComboBox*    m_filterCombo = nullptr;
     class QListWidget*  m_cardList    = nullptr;

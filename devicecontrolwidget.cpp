@@ -31,15 +31,27 @@ namespace {
 QIcon iconForDeviceType(const QString& type, QWidget* host) {
     QStyle* s = host ? host->style() : QApplication::style();
     if (type == "空调") {
+        const QIcon icon(":/icons/device_air.png");
+        if (!icon.isNull()) {
+            return icon;
+        }
         return s->standardIcon(QStyle::SP_BrowserReload);
     }
     if (type == "灯光") {
+        const QIcon icon(":/icons/device_light.png");
+        if (!icon.isNull()) {
+            return icon;
+        }
         return s->standardIcon(QStyle::SP_DialogYesButton);
     }
     if (type == "窗帘") {
         return s->standardIcon(QStyle::SP_ArrowLeft);
     }
     if (type == "摄像头") {
+        const QIcon icon(":/icons/device_camera.png");
+        if (!icon.isNull()) {
+            return icon;
+        }
         return s->standardIcon(QStyle::SP_ComputerIcon);
     }
     return s->standardIcon(QStyle::SP_FileIcon);
@@ -489,20 +501,51 @@ bool DeviceControlWidget::eventFilter(QObject* watched, QEvent* event) {
             if (!m_cardDragging && (mouseEv->pos() - m_pressPos).manhattanLength() < QApplication::startDragDistance()) {
                 return false;
             }
-            m_cardDragging = true;
+
+            if (!m_cardDragging) {
+                m_cardDragging = true;
+                QListWidgetItem* draggingItem = m_cardList->item(m_dragRow);
+                if (!draggingItem) {
+                    m_cardDragging = false;
+                    return false;
+                }
+
+                const QRect itemRect = m_cardList->visualItemRect(draggingItem);
+                const QPixmap snap = m_cardList->viewport()->grab(itemRect);
+                if (!m_dragGhost) {
+                    m_dragGhost = new QLabel(m_cardList->viewport());
+                    m_dragGhost->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+                }
+                m_dragGhost->setPixmap(snap);
+                m_dragGhost->resize(snap.size());
+                m_dragHotspot = mouseEv->pos() - itemRect.topLeft();
+                m_dragGhost->move(mouseEv->pos() - m_dragHotspot);
+                m_dragGhost->show();
+
+                // Hide real card content; ghost follows cursor for smooth dragging.
+                draggingItem->setText("");
+                draggingItem->setIcon(QIcon());
+                draggingItem->setBackground(QBrush(QColor(0, 0, 0, 0)));
+                draggingItem->setForeground(QBrush(QColor(0, 0, 0, 0)));
+                m_suppressCardClick = true;
+            }
+
+            if (m_dragGhost) {
+                m_dragGhost->move(mouseEv->pos() - m_dragHotspot);
+            }
 
             QModelIndex targetIdx = m_cardList->indexAt(mouseEv->pos());
             if (!targetIdx.isValid()) {
-                return false;
+                return true;
             }
             const int targetRow = targetIdx.row();
             if (targetRow < 0 || targetRow == m_dragRow) {
-                return false;
+                return true;
             }
 
             QListWidgetItem* moving = m_cardList->takeItem(m_dragRow);
             if (!moving) {
-                return false;
+                return true;
             }
             m_cardList->insertItem(targetRow, moving);
             m_cardList->setCurrentItem(moving);
@@ -515,6 +558,11 @@ bool DeviceControlWidget::eventFilter(QObject* watched, QEvent* event) {
         } else if (event->type() == QEvent::MouseButtonRelease) {
             if (m_cardDragging) {
                 persistDeviceOrderToSetting();
+                if (m_dragGhost) {
+                    m_dragGhost->hide();
+                }
+                loadDevices();
+                m_suppressCardClick = true;
             }
             m_cardDragging = false;
             m_dragRow = -1;
