@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="app.ico">assets/icons/smarthome.ico</file>
+    </qresource>
+</RCC>

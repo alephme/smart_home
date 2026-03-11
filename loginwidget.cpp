@@ -59,7 +59,7 @@ void LoginWidget::setupUI() {
     heroSub->setStyleSheet("color:rgba(255,255,255,210);font-size:15px;");
     outer->addWidget(heroSub);
 
-    QGroupBox* box = new QGroupBox("账号登录", this);
+    QGroupBox* box = new QGroupBox("", this);
     box->setFixedWidth(420);
     box->setStyleSheet(
         "QGroupBox{"
@@ -70,7 +70,7 @@ void LoginWidget::setupUI() {
         "border-radius:14px;"
         "background:rgba(255,255,255,215);"
         "color:#16313f;}"
-        "QGroupBox::title{subcontrol-origin: margin;subcontrol-position: top left;left:16px;padding:6 6px;}");
+        );
 
     QFormLayout* form = new QFormLayout(box);
     form->setSpacing(14);

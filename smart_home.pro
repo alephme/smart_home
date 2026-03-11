@@ -29,4 +29,7 @@ HEADERS += \
     alarmwidget.h \
     settingswidget.h
 
+RESOURCES += \
+    resources.qrc
+
 DESTDIR = $$PWD/bin

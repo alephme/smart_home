@@ -17,6 +17,7 @@
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     setWindowTitle("智能家居监控平台");
+    // setWindowIcon(QIcon(":/icons/smarthome.ico"));
     resize(1200, 750);
     setMinimumSize(900, 600);
 

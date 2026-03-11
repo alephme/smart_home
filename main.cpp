@@ -1,11 +1,23 @@
 #include <QApplication>
 #include <QFont>
+#include <QFile>
+#include <QIcon>
+#include <QStyle>
 #include "mainwindow.h"
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     app.setApplicationName("智能家居监控平台");
     app.setApplicationVersion("1.0");
+
+    QIcon appIcon;
+    if (QFile::exists(":/icons/app.ico")) {
+        appIcon = QIcon(":/icons/app.ico");
+    }
+    if (appIcon.isNull()) {
+        appIcon = app.style()->standardIcon(QStyle::SP_ComputerIcon);
+    }
+    app.setWindowIcon(appIcon);
 
     // 全局字体
     QFont font;
@@ -33,6 +45,7 @@ int main(int argc, char* argv[]) {
     )");
 
     MainWindow w;
+    w.setWindowIcon(appIcon);
     w.show();
     return app.exec();
 }
