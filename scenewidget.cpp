@@ -200,28 +200,120 @@ void SceneWidget::onAddScene() {
 }
 
 void SceneWidget::onEditScene() {
-    if (m_selectedSceneId < 0) { QMessageBox::information(this,"提示","请先选择一个场景"); return; }
+    if (m_selectedSceneId < 0) {
+        QMessageBox::information(this, "提示", "请先选择一个场景");
+        return;
+    }
+
+    // 获取当前场景的基本信息
     auto scenes = DatabaseManager::instance()->getScenes();
     QString curName, curDesc;
     for (const auto& s : scenes) {
         if (s["id"].toInt() == m_selectedSceneId) {
-            curName = s["name"].toString(); curDesc = s["description"].toString(); break;
+            curName = s["name"].toString();
+            curDesc = s["description"].toString();
+            break;
         }
     }
-    QDialog dlg(this); dlg.setWindowTitle("编辑场景"); dlg.setFixedWidth(340);
-    QFormLayout* form = new QFormLayout(&dlg);
+
+    // 获取当前场景已绑定的设备（用于预置选中状态）
+    auto currentDevices = DatabaseManager::instance()->getSceneDevices(m_selectedSceneId);
+    QMap<int, QString> deviceActionMap;
+    for (const auto& d : currentDevices) {
+        deviceActionMap[d["device_id"].toInt()] = d["action"].toString();
+    }
+
+    QDialog dlg(this);
+    dlg.setWindowTitle("编辑场景");
+    dlg.setFixedWidth(500);  // 调宽以容纳设备列表
+
+    QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
+
+    // 名称和描述输入
+    QFormLayout* form = new QFormLayout();
     QLineEdit* nameEdit = new QLineEdit(curName, &dlg);
     QLineEdit* descEdit = new QLineEdit(curDesc, &dlg);
     form->addRow("场景名称:", nameEdit);
     form->addRow("场景描述:", descEdit);
-    QDialogButtonBox* bb = new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel,&dlg);
-    form->addRow(bb);
-    connect(bb, &QDialogButtonBox::accepted, &dlg, [&]{
+    mainLayout->addLayout(form);
+
+    // ----- 设备选择区域（复制自 onAddScene）-----
+    QGroupBox* devBox = new QGroupBox("选择绑定设备及操作", &dlg);
+    QVBoxLayout* devVl = new QVBoxLayout(devBox);
+    QScrollArea* scroll = new QScrollArea(&dlg);
+    QWidget* scrollContent = new QWidget(scroll);
+    QVBoxLayout* scrollVl = new QVBoxLayout(scrollContent);
+
+    auto devices = DatabaseManager::instance()->getDevices();
+    QList<QPair<QCheckBox*, QComboBox*>> devControls;
+    for (const auto& d : devices) {
+        int devId = d["id"].toInt();
+        QString devName = d["name"].toString();
+        QString devType = d["type"].toString();
+
+        QHBoxLayout* row = new QHBoxLayout();
+        QCheckBox* cb = new QCheckBox(devName + " [" + devType + "]", scrollContent);
+        cb->setProperty("deviceId", devId);
+
+        QComboBox* actionCombo = new QComboBox(scrollContent);
+        actionCombo->addItems({"开启", "关闭", "设置参数"});
+
+        // 如果当前设备已绑定，则勾选并设置动作
+        if (deviceActionMap.contains(devId)) {
+            cb->setChecked(true);
+            QString action = deviceActionMap[devId];
+            int index = actionCombo->findText(action);
+            if (index >= 0) actionCombo->setCurrentIndex(index);
+        }
+
+        row->addWidget(cb);
+        row->addWidget(actionCombo);
+        scrollVl->addLayout(row);
+        devControls.append({cb, actionCombo});
+    }
+
+    scrollContent->setLayout(scrollVl);
+    scroll->setWidget(scrollContent);
+    scroll->setFixedHeight(200);
+    devVl->addWidget(scroll);
+    mainLayout->addWidget(devBox);
+    // --------------------------------------------
+
+    QDialogButtonBox* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+    mainLayout->addWidget(bb);
+
+    connect(bb, &QDialogButtonBox::accepted, &dlg, [&] {
+        // 1. 更新场景名称和描述
         DatabaseManager::instance()->updateScene(m_selectedSceneId, nameEdit->text(), descEdit->text());
+
+        // 2. 删除旧的设备绑定（使用已有的批量删除方法）
+        DatabaseManager::instance()->deleteSceneDevices(m_selectedSceneId);
+
+        // 3. 添加新的设备绑定
+        for (const auto& pair : devControls) {
+            if (pair.first->isChecked()) {
+                int devId = pair.first->property("deviceId").toInt();
+                QString action = pair.second->currentText();
+                DatabaseManager::instance()->addSceneDevice(m_selectedSceneId, devId, action, "");
+            }
+        }
+
         dlg.accept();
     });
+
     connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
-    if (dlg.exec() == QDialog::Accepted) loadScenes();
+
+    if (dlg.exec() == QDialog::Accepted) {
+        loadScenes();  // 刷新列表
+        // 重新选中当前编辑的场景（因为列表刷新后选中状态会丢失）
+        for (int i = 0; i < m_sceneList->count(); ++i) {
+            QListWidgetItem* item = m_sceneList->item(i);
+            if (item->data(Qt::UserRole).toInt() == m_selectedSceneId) {
+                m_sceneList->setCurrentRow(i);
+                break;
+            }
+        }
+    }
 }
 
 void SceneWidget::onDeleteScene() {
