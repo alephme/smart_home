@@ -3,6 +3,7 @@
         <file alias="app.ico">assets/icons/smarthome.ico</file>
         <file alias="device_air.png">assets/airconditional.png</file>
         <file alias="device_light.png">assets/light.png</file>
+        <file alias="device_curtain.png">assets/curtain.png</file>
         <file alias="device_camera.png">assets/camara.png</file>
     </qresource>
 </RCC>

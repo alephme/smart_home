@@ -45,6 +45,10 @@ QIcon iconForDeviceType(const QString& type, QWidget* host) {
         return s->standardIcon(QStyle::SP_DialogYesButton);
     }
     if (type == "窗帘") {
+        const QIcon icon(":/icons/device_curtain.png");
+        if (!icon.isNull()) {
+            return icon;
+        }
         return s->standardIcon(QStyle::SP_ArrowLeft);
     }
     if (type == "摄像头") {

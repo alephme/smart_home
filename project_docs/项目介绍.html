@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>智能家居监控平台 - 项目介绍</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --ink: #1f2937;
+      --sub: #4b5563;
+      --line: #dbe3ee;
+      --brand: #0f766e;
+      --brand-2: #0b4f6c;
+      --warn: #b45309;
+      --danger: #b91c1c;
+      --ok: #166534;
+      --soft: #eef6ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 8%, #dbeafe 0, #dbeafe 10%, transparent 45%),
+        radial-gradient(circle at 92% 16%, #ccfbf1 0, #ccfbf1 8%, transparent 40%),
+        radial-gradient(circle at 12% 92%, #fef3c7 0, #fef3c7 7%, transparent 42%),
+        var(--bg);
+      line-height: 1.65;
+    }
+
+    .wrap {
+      width: min(1200px, 94vw);
+      margin: 28px auto 46px;
+    }
+
+    .hero {
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, #0b4f6c 0%, #0f766e 60%, #14b8a6 100%);
+      color: #ecfeff;
+      border-radius: 18px;
+      padding: 28px 26px;
+      box-shadow: 0 14px 30px rgba(11, 79, 108, 0.22);
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(1.45rem, 2.1vw, 2rem);
+      letter-spacing: 0.5px;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 980px;
+      color: rgba(236, 254, 255, 0.95);
+    }
+
+    .grid {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 5px 16px rgba(15, 23, 42, 0.05);
+    }
+
+    .span-12 { grid-column: span 12; }
+    .span-8 { grid-column: span 8; }
+    .span-6 { grid-column: span 6; }
+    .span-4 { grid-column: span 4; }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 1.16rem;
+      color: var(--brand-2);
+      border-left: 4px solid var(--brand);
+      padding-left: 10px;
+    }
+
+    h3 {
+      margin: 14px 0 8px;
+      font-size: 1rem;
+      color: #0b3b50;
+    }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+
+    li { margin: 4px 0; }
+
+    code {
+      background: #f1f5f9;
+      border: 1px solid #dbe6f2;
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-family: "Consolas", "Courier New", monospace;
+      color: #0f172a;
+      font-size: 0.95em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eaf2fb;
+      color: #0b3b50;
+      font-weight: 700;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      border: 1px solid transparent;
+      margin-right: 6px;
+      margin-bottom: 6px;
+      background: #f1f5f9;
+      color: #334155;
+    }
+
+    .ok { background: #ecfdf5; color: var(--ok); border-color: #bbf7d0; }
+    .warn { background: #fffbeb; color: var(--warn); border-color: #fde68a; }
+    .danger { background: #fef2f2; color: var(--danger); border-color: #fecaca; }
+
+    .flow {
+      background: var(--soft);
+      border: 1px dashed #9fb6d5;
+      border-radius: 12px;
+      padding: 12px;
+      overflow-x: auto;
+    }
+
+    .mono {
+      white-space: pre;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 0.92rem;
+      color: #0f172a;
+    }
+
+    .foot {
+      margin-top: 14px;
+      color: #475569;
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 900px) {
+      .span-8, .span-6, .span-4 { grid-column: span 12; }
+      .wrap { width: min(1180px, 96vw); margin-top: 16px; }
+      .hero { padding: 20px 16px; border-radius: 14px; }
+      .card { padding: 14px; }
+      table { font-size: 0.88rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>智能家居监控平台（Qt Widgets）项目介绍</h1>
+      <p>
+        本文档基于当前工程源码整理，覆盖整体架构、数据库结构组织、六大模块拆分、关键业务流程和后续可扩展方向。
+        项目采用 <code>Qt 5 + C++14 + SQLite</code>，以桌面端可视化方式实现智能家居的登录管理、设备控制、场景编排、历史追踪、异常报警与系统配置。
+      </p>
+    </section>
+
+    <div class="grid">
+      <section class="card span-8">
+        <h2>1. 项目定位与技术栈</h2>
+        <ul>
+          <li>定位：企业实训型智能家居管理平台，强调“可演示 + 可扩展 + 端到端闭环”。</li>
+          <li>框架：<code>Qt Widgets</code>（界面） + <code>Qt SQL</code>（数据访问） + <code>Qt Network</code>（设备配对探测）。</li>
+          <li>数据库：<code>SQLite</code>（默认 <code>smart_home.db</code>，由 <code>DatabaseManager</code> 单例统一管理）。</li>
+          <li>构建：<code>qmake</code> + MinGW，产物输出到 <code>bin/</code>。</li>
+          <li>运行模型：本地单进程桌面应用，界面层通过信号槽触发业务操作并写入数据库。</li>
+        </ul>
+      </section>
+
+      <section class="card span-4">
+        <h2>2. 模块总览</h2>
+        <div class="tag">登录与首页模块</div>
+        <div class="tag">设备控制与状态监控模块</div>
+        <div class="tag">场景模式设置模块</div>
+        <div class="tag">历史操作与数据查询模块</div>
+        <div class="tag">异常报警模块</div>
+        <div class="tag">系统与设备管理模块</div>
+        <p class="foot">页面容器为 <code>MainWindow + QStackedWidget</code>，登录成功后切换到主导航界面。</p>
+      </section>
+
+      <section class="card span-12">
+        <h2>3. 架构组织（分层视角）</h2>
+        <div class="flow"><div class="mono">UI 层（Widget）
+  LoginWidget / HomeWidget / DeviceControlWidget / SceneWidget /
+  HistoryWidget / AlarmWidget / SettingsWidget
+      |
+      |  调用
+      v
+数据访问层（DatabaseManager 单例）
+  users / devices / scenes / scene_devices / operation_logs /
+  env_data / alarms / settings
+      |
+      |  落地
+      v
+SQLite（smart_home.db）</div></div>
+        <ul>
+          <li>UI 组件职责清晰，每个模块是独立 Widget，便于替换或升级。</li>
+          <li><code>DatabaseManager</code> 作为统一数据入口，屏蔽 SQL 细节，供所有模块复用。</li>
+          <li>主窗口负责页面导航、用户会话状态（当前用户名）和跨模块信号连接。</li>
+        </ul>
+      </section>
+
+      <section class="card span-12">
+        <h2>4. 数据库结构组织（核心）</h2>
+        <h3>4.1 表结构</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>表名</th>
+              <th>核心字段</th>
+              <th>用途</th>
+              <th>关联关系</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>users</code></td>
+              <td>id, username, password(sha256), role, created_at</td>
+              <td>登录认证、账号管理（含注册/重置）</td>
+              <td>通过 username 参与操作日志记录</td>
+            </tr>
+            <tr>
+              <td><code>devices</code></td>
+              <td>id, name, type, grp, ip, port, status, params</td>
+              <td>设备主数据与实时状态</td>
+              <td>与 <code>scene_devices.device_id</code> 逻辑关联</td>
+            </tr>
+            <tr>
+              <td><code>scenes</code></td>
+              <td>id, name, description, created_at</td>
+              <td>场景定义（回家/睡眠/离家等）</td>
+              <td>与 <code>scene_devices.scene_id</code> 逻辑关联</td>
+            </tr>
+            <tr>
+              <td><code>scene_devices</code></td>
+              <td>id, scene_id, device_id, action, params</td>
+              <td>场景与设备动作绑定</td>
+              <td>连接 scenes 与 devices（多对多桥表）</td>
+            </tr>
+            <tr>
+              <td><code>operation_logs</code></td>
+              <td>id, username, device_name, action, result, created_at</td>
+              <td>操作审计、历史追溯、CSV 导出来源</td>
+              <td>记录用户对设备的行为结果</td>
+            </tr>
+            <tr>
+              <td><code>env_data</code></td>
+              <td>id, temperature, humidity, air_quality, created_at</td>
+              <td>环境传感数据存档</td>
+              <td>用于首页统计与报警阈值判断</td>
+            </tr>
+            <tr>
+              <td><code>alarms</code></td>
+              <td>id, type, content, device_name, is_read, created_at</td>
+              <td>异常告警记录与展示</td>
+              <td>可由环境阈值、设备离线等触发</td>
+            </tr>
+            <tr>
+              <td><code>settings</code></td>
+              <td>key, value</td>
+              <td>系统参数持久化（主题、刷新、排序等）</td>
+              <td>被设备页、系统设置页读取与写入</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>4.2 数据初始化策略</h3>
+        <ul>
+          <li>首次启动自动建表并写入默认管理员账号：<code>admin / admin123</code>（密码存储为 SHA-256）。</li>
+          <li>若设备表为空，自动插入演示设备；若环境表为空，插入演示环境样本。</li>
+          <li>自动创建示例场景：回家模式、睡眠模式、离家模式，并在启动时重置演示绑定关系。</li>
+        </ul>
+
+        <h3>4.3 关系与一致性说明</h3>
+        <ul>
+          <li><span class="tag ok">已具备</span> 通过业务方法保持桥表一致性（如场景删除时清理绑定；启动时清理孤立绑定）。</li>
+          <li><span class="tag warn">可增强</span> 当前 <code>scene_devices</code> 未声明显式外键约束，后续可补充 FK + ON DELETE CASCADE，提升数据库级一致性。</li>
+        </ul>
+      </section>
+
+      <section class="card span-12">
+        <h2>5. 六大模块详细组织</h2>
+
+        <h3>5.1 登录与首页模块</h3>
+        <ul>
+          <li>登录页 <code>LoginWidget</code>：提供登录、注册、密码重置；输入校验后调用 <code>validateUser / addUser / resetPassword</code>。</li>
+          <li>登录成功发送 <code>loginSuccess(username)</code>，主窗口切换到业务主界面。</li>
+          <li>首页 <code>HomeWidget</code>：展示在线/离线设备数、报警数量、当前时间；每 5 秒自动刷新。</li>
+          <li>首页内置快捷入口按钮，直接导航到设备、场景、历史、报警、设置页面。</li>
+        </ul>
+
+        <h3>5.2 设备控制与状态监控模块</h3>
+        <ul>
+          <li>设备页 <code>DeviceControlWidget</code> 以卡片方式展示设备，支持类型过滤、添加、编辑、删除、刷新。</li>
+          <li>支持设备卡片拖拽重排，顺序通过 <code>settings.device_card_order</code> 持久化。</li>
+          <li>离线设备点击后可尝试 TCP 配对（<code>QTcpSocket connectToHost</code>），成功后自动置为在线。</li>
+          <li>在线设备可打开控制弹窗，根据设备类型动态渲染控制项：
+            灯光（亮度/颜色）、空调（模式/温度/风力）、窗帘（开合度）、摄像头（监控开关）。</li>
+          <li>每次控制结果写入 <code>operation_logs</code>，并触发 <code>deviceChanged</code> 更新首页统计。</li>
+        </ul>
+
+        <h3>5.3 场景模式设置模块</h3>
+        <ul>
+          <li>场景页 <code>SceneWidget</code> 管理场景 CRUD，并维护“场景-设备动作”绑定。</li>
+          <li>新建/编辑时可按设备类型选择预设动作模板，模板包含 <code>action + params</code>。</li>
+          <li>激活场景时逐设备执行：在线设备更新参数并记日志，离线设备跳过并记 <code>offline_skip</code>。</li>
+          <li>场景参数与设备当前参数进行 merge，保证未覆盖字段可延续现值。</li>
+        </ul>
+
+        <h3>5.4 历史操作与数据查询模块</h3>
+        <ul>
+          <li>历史页 <code>HistoryWidget</code> 由双标签页组成：操作记录、环境数据。</li>
+          <li>支持按日期范围和设备类型查询，调用 <code>getOperationLogs / getEnvData</code>。</li>
+          <li>支持 CSV 导出，便于归档、分析或课设汇报。</li>
+        </ul>
+
+        <h3>5.5 异常报警模块</h3>
+        <ul>
+          <li>报警页 <code>AlarmWidget</code> 支持阈值配置（温度、湿度）与 10 秒轮询检查。</li>
+          <li>检测逻辑包括：环境数据超阈值、设备离线状态；报警写入 <code>alarms</code> 并更新表格。</li>
+          <li>支持删除选中和清空全部；对离线报警有“避免重复”判定。</li>
+          <li>主窗口可接收报警触发信号并统一追加系统异常记录。</li>
+        </ul>
+
+        <h3>5.6 系统与设备管理模块</h3>
+        <ul>
+          <li>系统设置页 <code>SettingsWidget</code> 负责主题、刷新间隔、数据库路径等参数维护。</li>
+          <li>设备管理能力分布在设备页（设备档案维护）与数据库层（设备状态写入）两部分。</li>
+          <li>系统配置统一保存到 <code>settings</code>，实现跨次启动记忆。</li>
+        </ul>
+      </section>
+
+      <section class="card span-6">
+        <h2>6. 页面与信号槽协同</h2>
+        <ul>
+          <li><code>MainWindow</code> 承担导航条与页面栈管理，页面索引固定：主页、设备、场景、历史、报警、设置。</li>
+          <li><code>HomeWidget::navigateTo</code> 直接驱动页面跳转，形成“总览 -> 业务页”快速流。</li>
+          <li><code>DeviceControlWidget::deviceChanged</code> 连接到首页刷新，保证统计一致。</li>
+          <li><code>AlarmWidget::alarmTriggered</code> 连接主窗口后，能够统一补充“系统异常”告警记录。</li>
+        </ul>
+      </section>
+
+      <section class="card span-6">
+        <h2>7. 典型业务流程</h2>
+        <div class="flow"><div class="mono">用户登录
+  -> MainWindow 构建导航与页面栈
+  -> 设备页控制设备（更新 devices + 记录 operation_logs）
+  -> 场景页激活场景（批量更新 devices + 记录 operation_logs）
+  -> 报警页定时检查（写入 alarms）
+  -> 历史页查询/导出（读取 operation_logs 与 env_data）</div></div>
+      </section>
+
+      <section class="card span-12">
+        <h2>8. 当前工程亮点与可优化点</h2>
+        <h3>亮点</h3>
+        <ul>
+          <li>模块边界清晰，UI 与数据访问解耦，适合教学与二次开发。</li>
+          <li>数据链路完整：控制动作、场景执行、报警生成、历史追溯形成闭环。</li>
+          <li>演示数据初始化完善，开箱即可运行展示。</li>
+        </ul>
+
+        <h3>可优化点</h3>
+        <ul>
+          <li>可将数据库查询字符串拼接改为参数化，进一步提升安全性与可维护性。</li>
+          <li>可引入真正的设备协议层（MQTT/Modbus/HTTP API），替代当前演示级 TCP 连通校验。</li>
+          <li>可补充权限分级（admin/user）在页面级、操作级的限制逻辑。</li>
+          <li>可加入自动化测试（数据库接口测试、关键业务流程测试、UI 冒烟测试）。</li>
+        </ul>
+      </section>
+
+      <section class="card span-12">
+        <h2>9. 源码文件映射（便于快速定位）</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>功能域</th>
+              <th>主要文件</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>应用入口</td>
+              <td><code>main.cpp</code></td>
+              <td>应用初始化、全局字体样式、主窗口启动</td>
+            </tr>
+            <tr>
+              <td>页面容器</td>
+              <td><code>mainwindow.h/.cpp</code></td>
+              <td>登录切换、导航条、页面栈、跨模块信号连接</td>
+            </tr>
+            <tr>
+              <td>数据库访问层</td>
+              <td><code>databasemanager.h/.cpp</code></td>
+              <td>建表、初始化、业务 CRUD、配置存储</td>
+            </tr>
+            <tr>
+              <td>登录与账号</td>
+              <td><code>loginwidget.h/.cpp</code></td>
+              <td>登录/注册/重置密码</td>
+            </tr>
+            <tr>
+              <td>首页总览</td>
+              <td><code>homewidget.h/.cpp</code></td>
+              <td>统计卡片、快捷入口、定时刷新</td>
+            </tr>
+            <tr>
+              <td>设备控制</td>
+              <td><code>devicecontrolwidget.h/.cpp</code></td>
+              <td>设备管理、控制弹窗、配对、日志、排序</td>
+            </tr>
+            <tr>
+              <td>场景模式</td>
+              <td><code>scenewidget.h/.cpp</code></td>
+              <td>场景与动作绑定、激活执行</td>
+            </tr>
+            <tr>
+              <td>历史查询</td>
+              <td><code>historywidget.h/.cpp</code></td>
+              <td>操作日志查询与环境数据展示、CSV 导出</td>
+            </tr>
+            <tr>
+              <td>报警管理</td>
+              <td><code>alarmwidget.h/.cpp</code></td>
+              <td>阈值检查、报警记录维护</td>
+            </tr>
+            <tr>
+              <td>系统设置</td>
+              <td><code>settingswidget.h/.cpp</code></td>
+              <td>主题、刷新周期、数据库路径配置</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <p class="foot">
+      文档生成时间：2026-03-11。该介绍页为静态 HTML，可直接在浏览器打开，适用于项目答辩、交接文档或仓库说明补充。
+    </p>
+  </div>
+</body>
+</html>
