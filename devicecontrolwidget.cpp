@@ -293,10 +293,19 @@ void DeviceControlWidget::showDeviceControlDialog(const QMap<QString, QVariant>&
     QGroupBox* box = new QGroupBox("控制项", &dlg);
     QFormLayout* form = new QFormLayout(box);
 
-    QComboBox* power = new QComboBox(box);
-    power->addItems({"on", "off"});
-    power->setCurrentText(kv.value("power", "on"));
-    form->addRow("开关", power);
+    QPushButton* powerBtn = new QPushButton(box);
+    const bool powerOn = (kv.value("power", "on") != "off");
+    powerBtn->setCheckable(true);
+    powerBtn->setChecked(powerOn);
+    auto refreshPowerBtn = [powerBtn](bool on) {
+        powerBtn->setText(on ? "开启" : "关闭");
+        powerBtn->setStyleSheet(on
+                                    ? "QPushButton{background:#16a34a;color:white;padding:6px 12px;border-radius:6px;}"
+                                    : "QPushButton{background:#6b7280;color:white;padding:6px 12px;border-radius:6px;}");
+    };
+    refreshPowerBtn(powerOn);
+    connect(powerBtn, &QPushButton::toggled, &dlg, [refreshPowerBtn](bool on) { refreshPowerBtn(on); });
+    form->addRow("开关", powerBtn);
 
     QSpinBox* tempSpin = nullptr;
     QComboBox* modeCombo = nullptr;
@@ -351,10 +360,10 @@ void DeviceControlWidget::showDeviceControlDialog(const QMap<QString, QVariant>&
         curtainOpen->setValue(kv.value("open", "50").toInt());
         form->addRow("开合度(%)", curtainOpen);
     } else if (type == "摄像头") {
-        QLabel* readonly = new QLabel("摄像头示例设备仅支持在线/离线与开关。", box);
-        readonly->setWordWrap(true);
-        readonly->setStyleSheet("color:#6b7280;");
-        form->addRow(readonly);
+        // QLabel* readonly = new QLabel("。", box);
+        // readonly->setWordWrap(true);
+        // readonly->setStyleSheet("color:#6b7280;");
+        // form->addRow(readonly);
     }
 
     vl->addWidget(box);
@@ -368,7 +377,7 @@ void DeviceControlWidget::showDeviceControlDialog(const QMap<QString, QVariant>&
         return;
     }
 
-    kv["power"] = power->currentText();
+    kv["power"] = powerBtn->isChecked() ? "on" : "off";
     if (modeCombo) {
         kv["mode"] = modeCombo->currentText();
     }
