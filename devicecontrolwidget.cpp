@@ -105,19 +105,24 @@ void DeviceControlWidget::setupUI() {
     connect(m_filterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &DeviceControlWidget::onRefresh);
 
-    auto makeBtn = [this, topBar](const QString& text, const QString& color, auto slot) {
+    auto makeBtn = [this, topBar](const QString& text,
+                                  const QString& color,
+                                  const QString& hoverColor,
+                                  const QString& pressedColor,
+                                  auto slot) {
         QPushButton* btn = new QPushButton(text, this);
         btn->setStyleSheet(QString("QPushButton{background:%1;color:white;padding:5px 12px;border-radius:4px;}"
-                                   "QPushButton:hover{opacity:0.85;}")
-                               .arg(color));
+                                   "QPushButton:hover{background:%2;}"
+                                   "QPushButton:pressed{background:%3;}")
+                               .arg(color, hoverColor, pressedColor));
         connect(btn, &QPushButton::clicked, this, slot);
         topBar->addWidget(btn);
     };
 
     topBar->addWidget(filterLbl);
     topBar->addWidget(m_filterCombo);
-    makeBtn("刷新", "#3498db", &DeviceControlWidget::onRefresh);
-    makeBtn("添加设备", "#27ae60", &DeviceControlWidget::onAddDevice);
+    makeBtn("刷新", "#3498db", "#5dade2", "#1f6a9a", &DeviceControlWidget::onRefresh);
+    makeBtn("添加设备", "#27ae60", "#52be80", "#1e8449", &DeviceControlWidget::onAddDevice);
     outerVl->addLayout(topBar);
 
     m_cardList = new QListWidget(this);
