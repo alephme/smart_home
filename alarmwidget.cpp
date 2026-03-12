@@ -12,6 +12,8 @@
 #include <QTimer>
 #include <QMessageBox>
 
+// 报警页：阈值检查 + 离线检测 + 报警记录维护。
+
 AlarmWidget::AlarmWidget(QWidget* parent) : QWidget(parent) {
     setupUI();
     loadAlarms();
@@ -94,6 +96,7 @@ void AlarmWidget::setupUI() {
 }
 
 void AlarmWidget::loadAlarms() {
+    // 从数据库拉取报警列表并刷新表格显示。
     auto alarms = DatabaseManager::instance()->getAlarms();
     m_table->setRowCount(0);
     int unread = 0;

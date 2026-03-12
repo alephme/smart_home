@@ -20,6 +20,8 @@
 #include <QVariant>
 #include <QVBoxLayout>
 
+// 场景页：维护场景定义、设备绑定和场景激活执行。
+
 namespace {
 using ActionOption = QPair<QString, QString>; // action label, params template
 
@@ -80,6 +82,7 @@ void styleDialogButtons(QDialogButtonBox* buttonBox) {
 }
 
 QList<ActionOption> actionOptionsForDevice(const QString& type, const QString& name) {
+    // 根据设备类型生成可选动作模板，减少手工输入参数。
     QList<ActionOption> options;
     if (type == "空调") {
         options << ActionOption("开机-制冷24中风", "power=on;mode=制冷;temp=24;fan=中")
@@ -455,6 +458,7 @@ void SceneWidget::onDeleteScene() {
 }
 
 void SceneWidget::onActivateScene() {
+    // 执行场景时跳过离线设备，并记录执行/跳过日志。
     if (m_selectedSceneId < 0) {
         return;
     }

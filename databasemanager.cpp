@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <QDateTime>
 
+// 数据访问层：统一负责 SQLite 建表、读写和默认数据初始化。
+
 DatabaseManager* DatabaseManager::m_instance = nullptr;
 
 DatabaseManager* DatabaseManager::instance() {
@@ -13,6 +15,7 @@ DatabaseManager* DatabaseManager::instance() {
 DatabaseManager::DatabaseManager(QObject* parent) : QObject(parent) {}
 
 bool DatabaseManager::init(const QString& dbPath) {
+    // 打开数据库并完成首次结构/演示数据准备。
     m_db = QSqlDatabase::addDatabase("QSQLITE");
     m_db.setDatabaseName(dbPath);
     if (!m_db.open()) {
@@ -137,6 +140,7 @@ bool DatabaseManager::init(const QString& dbPath) {
 }
 
 void DatabaseManager::createTables() {
+    // 按模块创建表结构，缺失时自动补齐。
     QSqlQuery q(m_db);
     q.exec("PRAGMA foreign_keys = ON");
 
@@ -393,6 +397,7 @@ QList<QMap<QString,QVariant>> DatabaseManager::getSceneDevices(int sceneId) {
 
 bool DatabaseManager::addOperationLog(const QString& user, const QString& deviceName,
                                       const QString& action, const QString& result) {
+    // 日志写入时补充 device_type，便于历史页面按类型筛选。
     QString deviceType;
     QSqlQuery typeQuery(m_db);
     typeQuery.prepare("SELECT type FROM devices WHERE name=? ORDER BY id DESC LIMIT 1");
@@ -442,6 +447,7 @@ bool DatabaseManager::addEnvData(double temperature, double humidity, double air
 
 QList<QMap<QString,QVariant>> DatabaseManager::getEnvData(const QString& startDate,
                                                            const QString& endDate) {
+    // 环境数据按时间倒序返回，默认限制最近 1000 条。
     QList<QMap<QString,QVariant>> result;
     QString sql = "SELECT temperature,humidity,air_quality,created_at FROM env_data WHERE 1=1";
     if (!startDate.isEmpty()) sql += " AND created_at >= '" + startDate + "'";

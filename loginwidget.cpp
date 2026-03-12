@@ -14,6 +14,8 @@
 #include <QResizeEvent>
 #include <QFont>
 
+// 登录页：负责登录校验、注册和重置密码入口。
+
 LoginWidget::LoginWidget(QWidget* parent) : QWidget(parent) {
     setupUI();
     m_bgPixmap.load("assets/login_bg.jpg");
@@ -198,6 +200,7 @@ void LoginWidget::setupUI() {
 }
 
 void LoginWidget::onLogin() {
+    // 先做输入校验，再调用数据库层进行账号密码验证。
     QString user = m_userEdit->text().trimmed();
     QString pass = m_passEdit->text();
     if (user.isEmpty() || pass.isEmpty()) {
@@ -213,6 +216,7 @@ void LoginWidget::onLogin() {
 }
 
 void LoginWidget::onRegister() {
+    // 注册流程：校验两次密码一致后写入 users 表。
     QDialog dlg(this);
     dlg.setWindowTitle("注册新账号");
     dlg.setFixedWidth(300);
@@ -244,6 +248,7 @@ void LoginWidget::onRegister() {
 }
 
 void LoginWidget::onResetPassword() {
+    // 重置流程：校验两次新密码一致后更新数据库。
     QDialog dlg(this);
     dlg.setWindowTitle("重置密码");
     dlg.setFixedWidth(300);

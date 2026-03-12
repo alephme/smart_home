@@ -6,6 +6,8 @@
 #include <QStyle>
 #include "mainwindow.h"
 
+// 程序入口：初始化应用属性、全局样式并启动主窗口。
+
 int main(int argc, char* argv[]) {
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -55,6 +57,7 @@ int main(int argc, char* argv[]) {
         QTabBar::tab:selected { background: white; }
     )");
 
+    // 创建并展示主窗口，进入 Qt 事件循环。
     MainWindow w;
     w.setWindowIcon(appIcon);
     w.show();

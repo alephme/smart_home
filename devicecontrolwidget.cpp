@@ -28,7 +28,10 @@
 
 #include <algorithm>
 
+// 设备控制页：设备卡片管理、参数控制、排序与状态切换。
+
 namespace {
+// 统一设备类型入口，避免各处手写字符串列表不一致。
 QStringList deviceTypeOptions() {
     return {"灯光", "空调", "窗帘", "摄像头", "空气净化器"};
 }
@@ -54,6 +57,7 @@ struct EnvSnapshot {
 };
 
 EnvSnapshot latestEnvironmentSnapshot() {
+    // 取最近一次环境记录作为基线，便于做平滑随机波动。
     const auto envData = DatabaseManager::instance()->getEnvData();
     if (envData.isEmpty()) {
         return EnvSnapshot();
@@ -68,6 +72,7 @@ EnvSnapshot latestEnvironmentSnapshot() {
 }
 
 EnvSnapshot buildAirConditionerSnapshot(const QMap<QString, QString>& kv) {
+    // 根据空调模式和目标温度模拟“当前温湿度回传”。
     EnvSnapshot snapshot = latestEnvironmentSnapshot();
     const bool powerOn = (kv.value("power", "on") != "off");
     const int targetTemp = kv.value("temp", "24").toInt();
@@ -102,6 +107,7 @@ EnvSnapshot buildAirConditionerSnapshot(const QMap<QString, QString>& kv) {
 }
 
 double buildPurifierAirQuality(bool powerOn) {
+    // 净化器开启时空气质量数值更优（更低），关闭时更差。
     return powerOn ? randomInRange(10.0, 28.0) : randomInRange(32.0, 68.0);
 }
 
@@ -282,6 +288,7 @@ void DeviceControlWidget::loadDevices() {
 
     const QString filter = (m_filterCombo->currentIndex() == 0) ? QString() : m_filterCombo->currentText();
     const bool allVisible = filter.isEmpty();
+    // 仅“全部”视图允许拖拽排序，过滤视图下禁用重排。
     m_cardList->setDragDropMode(QAbstractItemView::NoDragDrop);
     m_cardList->setDragEnabled(false);
     m_cardList->setAcceptDrops(false);
@@ -368,6 +375,7 @@ bool DeviceControlWidget::forceUpdateDeviceStatus(int deviceId,
                                                   const QString& status,
                                                   const QString& actionLabel,
                                                   const QString& successMessage) {
+    // 右键快捷操作共用的状态更新入口：改状态、记日志、刷新界面。
     const QString params = device.value("params").toString();
     const QString name = device.value("name").toString();
     if (!DatabaseManager::instance()->updateDeviceStatus(deviceId, status, params)) {
@@ -494,6 +502,7 @@ void DeviceControlWidget::showDeviceControlDialog(const QMap<QString, QVariant>&
         return;
     }
 
+    // 将界面输入统一回写到 params 键值对。
     kv["power"] = powerBtn->isChecked() ? "on" : "off";
     if (modeCombo) {
         kv["mode"] = modeCombo->currentText();
@@ -515,11 +524,13 @@ void DeviceControlWidget::showDeviceControlDialog(const QMap<QString, QVariant>&
     }
 
     if (type == "空调") {
+        // 控制空调后同步落一条环境采样记录。
         const EnvSnapshot snapshot = buildAirConditionerSnapshot(kv);
         kv["current_temp"] = formatMetric(snapshot.temperature);
         kv["current_humidity"] = formatMetric(snapshot.humidity);
         DatabaseManager::instance()->addEnvData(snapshot.temperature, snapshot.humidity, snapshot.airQuality);
     } else if (type == "空气净化器") {
+        // 净化器仅产出空气质量，温湿度沿用最近环境基线。
         const double airQuality = buildPurifierAirQuality(powerBtn->isChecked());
         const EnvSnapshot env = latestEnvironmentSnapshot();
         kv["air_quality"] = formatMetric(airQuality);
@@ -582,6 +593,7 @@ void DeviceControlWidget::onCardContextMenu(const QPoint& pos) {
 
     m_selectedDeviceId = deviceId;
     QMenu menu(this);
+    // 右键菜单同时提供管理项和调试态在线/离线切换。
     QAction* editAct = menu.addAction("编辑设备");
     QAction* delAct = menu.addAction("删除设备");
     menu.addSeparator();
@@ -659,6 +671,7 @@ bool DeviceControlWidget::eventFilter(QObject* watched, QEvent* event) {
                 return false;
             }
 
+            // 使用“幽灵卡片”实现拖拽跟手效果，不直接拖原 item。
             if (!m_cardDragging && (mouseEv->pos() - m_pressPos).manhattanLength() < QApplication::startDragDistance()) {
                 return false;
             }

@@ -20,6 +20,8 @@
 #include <QMessageBox>
 #include <QDate>
 
+// 历史页：支持按条件查询操作日志与环境记录，并可导出 CSV。
+
 namespace {
 QString buttonStyle(const QString& color,
                     const QString& hoverColor,
@@ -103,6 +105,7 @@ void HistoryWidget::setupUI() {
 }
 
 void HistoryWidget::loadData() {
+    // 同步刷新“操作记录”和“环境数据”两个标签页的数据。
     // 加载操作记录
     QString typeFilter = m_typeFilter ? (m_typeFilter->currentIndex() == 0 ? "" : m_typeFilter->currentText()) : "";
     QString startStr = m_startDate ? m_startDate->date().toString("yyyy-MM-dd") : "";
@@ -142,6 +145,7 @@ void HistoryWidget::onQuery() {
 }
 
 void HistoryWidget::onExport() {
+    // 导出当前操作记录表格到 CSV（UTF-8 BOM 兼容 Excel）。
     QString path = QFileDialog::getSaveFileName(this, "导出CSV", "operation_log.csv",
                                                 "CSV文件 (*.csv)");
     if (path.isEmpty()) return;

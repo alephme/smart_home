@@ -13,6 +13,9 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QFileDialog>
+
+// 设置页：管理主题、采样间隔和数据库路径等持久化配置。
+
 SettingsWidget::SettingsWidget(QWidget* parent) : QWidget(parent) {
     setupUI();
     // 启动时应用当前保存的主题
@@ -70,6 +73,7 @@ void SettingsWidget::setupUI() {
 }
 
 void SettingsWidget::onSaveSettings() {
+    // 保存后立即通知主窗口更新采样定时器间隔。
     DatabaseManager::instance()->setSetting("theme", m_themeCombo->currentText());
     DatabaseManager::instance()->setSetting("sampling_interval", QString::number(m_samplingSpin->value()));
     DatabaseManager::instance()->setSetting("refresh_interval", QString::number(m_samplingSpin->value()));

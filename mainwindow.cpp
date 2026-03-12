@@ -23,6 +23,7 @@
 #include <QtGlobal>
 
 namespace {
+// 解析设备参数字符串（k1=v1;k2=v2）为键值映射。
 QMap<QString, QString> parseParams(const QString& params) {
     QMap<QString, QString> kv;
     const QStringList pairs = params.split(';', Qt::SkipEmptyParts);
@@ -184,6 +185,7 @@ void MainWindow::setupUI() {
 }
 
 void MainWindow::setupEnvSampling() {
+    // 启动全局环境采样定时器，间隔来自系统设置。
     if (!m_envSampleTimer) {
         m_envSampleTimer = new QTimer(this);
         connect(m_envSampleTimer, &QTimer::timeout, this, &MainWindow::onEnvSamplingTick);
@@ -209,6 +211,7 @@ void MainWindow::applyEnvSamplingInterval(int seconds) {
 }
 
 void MainWindow::onEnvSamplingTick() {
+    // 定时生成一条环境采样并写入数据库，供历史/报警模块读取。
     auto envData = DatabaseManager::instance()->getEnvData();
     double temperature = 25.0;
     double humidity = 55.0;
@@ -278,6 +281,7 @@ void MainWindow::onEnvSamplingTick() {
 }
 
 void MainWindow::setupNavBar() {
+    // 顶部导航栏负责页面切换与用户会话操作。
     m_navBar = new QWidget(this);
     m_navBar->setFixedHeight(50);
     m_navBar->setStyleSheet("background:#2c3e50; color:white;");

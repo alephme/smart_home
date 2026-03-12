@@ -15,6 +15,8 @@
 #include <QDateTime>
 #include <QMap>
 
+// 首页：展示概览统计、快捷入口和可配置的常用场景。
+
 namespace {
 const char* kFavoriteSceneSettingKey = "home_favorite_scene_ids";
 const QSize kSceneCardSize(132, 52);
@@ -187,6 +189,7 @@ void HomeWidget::saveFavoriteSceneIds(const QList<int>& ids) const {
 }
 
 void HomeWidget::refreshFavoriteScenes() {
+    // 按 settings 中保存的场景 ID 重新渲染常用场景卡片。
     if (!m_sceneLay) {
         return;
     }
@@ -253,6 +256,7 @@ void HomeWidget::refreshFavoriteScenes() {
 }
 
 void HomeWidget::activateFavoriteScene(int sceneId) {
+    // 首页直接触发场景动作，无需跳转到场景管理页。
     const auto sceneDevices = DatabaseManager::instance()->getSceneDevices(sceneId);
     if (sceneDevices.isEmpty()) {
         QMessageBox::information(this, "提示", "该场景未绑定任何设备动作。");
