@@ -145,36 +145,79 @@ void AlarmWidget::onCheckAlarms() {
 }
 
 void AlarmWidget::checkThresholds() {
-    // 检查最新环境数据是否超阈值
+    // 从数据库获取最新的环境数据列表（假设按时间倒序，第一条为最新）
     auto envData = DatabaseManager::instance()->getEnvData();
+
+    // 如果有环境数据，则检查最新一条是否超阈值
     if (!envData.isEmpty()) {
+        // 获取最新一条环境数据（列表的第一个元素）
         const auto& latest = envData.first();
+
+        // 从数据中提取温度值
         double temp = latest["temperature"].toDouble();
+        // 从数据中提取湿度值
         double humid = latest["humidity"].toDouble();
+
+        // 如果当前温度超过设定的温度阈值
         if (temp > m_tempThresh->value()) {
-            addAlarm("温度报警", QString("当前温度 %1℃ 超过阈值 %2℃").arg(temp).arg(m_tempThresh->value()), "客厅空调");
+            // --- 防重复检查：与离线报警逻辑一致 ---
+            // 获取所有现有报警记录
+            auto alarms = DatabaseManager::instance()->getAlarms();
+            bool alreadyAlarmed = false;
+            // 遍历报警记录，查找是否已存在温度报警（设备名为"客厅空调"）
+            for (const auto& a : alarms) {
+                if (a["device_name"].toString() == "客厅空调" &&
+                    a["type"].toString() == "温度报警") {
+                    alreadyAlarmed = true;
+                    break;
+                }
+            }
+            // 如果没有现有温度报警，则添加新报警
+            if (!alreadyAlarmed) {
+                addAlarm("温度报警",
+                         QString("当前温度 %1℃ 超过阈值 %2℃").arg(temp).arg(m_tempThresh->value()),
+                         "客厅空调");
+            }
         }
+
+        // 如果当前湿度超过设定的湿度阈值
         if (humid > m_humidThresh->value()) {
-            addAlarm("湿度报警", QString("当前湿度 %1% 超过阈值 %2%").arg(humid).arg(m_humidThresh->value()), "客厅空调");
+            // --- 防重复检查：与离线报警逻辑一致 ---
+            auto alarms = DatabaseManager::instance()->getAlarms();
+            bool alreadyAlarmed = false;
+            for (const auto& a : alarms) {
+                if (a["device_name"].toString() == "客厅空调" &&
+                    a["type"].toString() == "湿度报警") {
+                    alreadyAlarmed = true;
+                    break;
+                }
+            }
+            if (!alreadyAlarmed) {
+                addAlarm("湿度报警",
+                         QString("当前湿度 %1% 超过阈值 %2%").arg(humid).arg(m_humidThresh->value()),
+                         "客厅空调");
+            }
         }
     }
-    // 检查设备离线
+
+    // 检查设备离线（原逻辑保持不变）
     auto devices = DatabaseManager::instance()->getDevices();
     for (const auto& d : devices) {
         if (d["status"].toString() == "offline") {
-            // 避免重复报警：检查近期是否已有该设备的离线报警
             auto alarms = DatabaseManager::instance()->getAlarms();
             bool alreadyAlarmed = false;
             for (const auto& a : alarms) {
                 if (a["device_name"].toString() == d["name"].toString() &&
                     a["type"].toString() == "设备离线") {
-                    alreadyAlarmed = true; break;
+                    alreadyAlarmed = true;
+                    break;
                 }
             }
             if (!alreadyAlarmed) {
                 DatabaseManager::instance()->addAlarm("设备离线",
-                                                      d["name"].toString() + " 当前处于离线状态", d["name"].toString());
-                loadAlarms();
+                                                      d["name"].toString() + " 当前处于离线状态",
+                                                      d["name"].toString());
+                loadAlarms();  // 这里直接调用了数据库接口，所以需要手动刷新表格
             }
         }
     }
