@@ -11,7 +11,7 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 #include <QWidget>
-
+#include <QFileDialog>
 SettingsWidget::SettingsWidget(QWidget* parent) : QWidget(parent) {
     setupUI();
     // 启动时应用当前保存的主题
@@ -44,9 +44,18 @@ void SettingsWidget::setupUI() {
     m_refreshSpin->setValue(DatabaseManager::instance()->getSetting("refresh_interval", "5").toInt());
     sysForm->addRow("数据刷新间隔:", m_refreshSpin);
 
+    QHBoxLayout* dbPathLayout = new QHBoxLayout;
     m_dbPathEdit = new QLineEdit(DatabaseManager::instance()->getSetting("db_path", "smart_home.db"), panel);
-    sysForm->addRow("数据库路径:", m_dbPathEdit);
-
+    dbPathLayout->addWidget(m_dbPathEdit);
+    QPushButton* browseBtn = new QPushButton("浏览", panel);
+    connect(browseBtn, &QPushButton::clicked, [=]() {
+        QString filePath = QFileDialog::getOpenFileName(this, "选择数据库文件", "", "SQLite数据库 (*.db)");
+        if (!filePath.isEmpty()) {
+            m_dbPathEdit->setText(filePath);
+        }
+    });
+    dbPathLayout->addWidget(browseBtn);
+    sysForm->addRow("数据库路径:", dbPathLayout);
     QPushButton* saveBtn = new QPushButton("保存设置", panel);
     saveBtn->setStyleSheet("background:#2c3e50;color:white;padding:8px 20px;border-radius:4px;font-size:14px;");
     connect(saveBtn, &QPushButton::clicked, this, &SettingsWidget::onSaveSettings);
@@ -60,9 +69,11 @@ void SettingsWidget::onSaveSettings() {
     DatabaseManager::instance()->setSetting("theme", m_themeCombo->currentText());
     DatabaseManager::instance()->setSetting("refresh_interval", QString::number(m_refreshSpin->value()));
     DatabaseManager::instance()->setSetting("db_path", m_dbPathEdit->text());
-    // 保存后立即应用主题
+
     applyTheme(m_themeCombo->currentText());
-    QMessageBox::information(this, "成功", "系统设置已保存");
+
+    // 提示重启生效
+    QMessageBox::information(this, "成功", "设置已保存，修改数据库路径需要重启程序才能生效。");
 }
 
 // 新增：根据主题名称设置全局样式表
