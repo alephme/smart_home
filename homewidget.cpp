@@ -1,14 +1,76 @@
 #include "homewidget.h"
 #include "databasemanager.h"
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QCheckBox>
 #include <QGroupBox>
 #include <QFrame>
+#include <QMessageBox>
 #include <QTimer>
 #include <QDateTime>
+#include <QMap>
+
+namespace {
+const char* kFavoriteSceneSettingKey = "home_favorite_scene_ids";
+const QSize kSceneCardSize(132, 52);
+const char* kSceneCardColor = "#1f4b99";
+
+QString joinIds(const QList<int>& ids) {
+    QStringList out;
+    for (const int id : ids) {
+        out << QString::number(id);
+    }
+    return out.join(',');
+}
+
+QList<int> parseIds(const QString& text) {
+    QList<int> ids;
+    const QStringList parts = text.split(',', Qt::SkipEmptyParts);
+    for (const QString& p : parts) {
+        bool ok = false;
+        const int id = p.toInt(&ok);
+        if (ok && !ids.contains(id)) {
+            ids.append(id);
+        }
+    }
+    return ids;
+}
+
+QMap<QString, QString> parseParams(const QString& params) {
+    QMap<QString, QString> kv;
+    const QStringList pairs = params.split(';', Qt::SkipEmptyParts);
+    for (const QString& p : pairs) {
+        const int idx = p.indexOf('=');
+        if (idx <= 0) {
+            continue;
+        }
+        kv[p.left(idx).trimmed()] = p.mid(idx + 1).trimmed();
+    }
+    return kv;
+}
+
+QString buildParams(const QMap<QString, QString>& kv) {
+    QStringList parts;
+    for (auto it = kv.constBegin(); it != kv.constEnd(); ++it) {
+        parts << QString("%1=%2").arg(it.key(), it.value());
+    }
+    return parts.join(';');
+}
+
+QString mergeParams(const QString& base, const QString& updates) {
+    QMap<QString, QString> kv = parseParams(base);
+    const QMap<QString, QString> patch = parseParams(updates);
+    for (auto it = patch.constBegin(); it != patch.constEnd(); ++it) {
+        kv[it.key()] = it.value();
+    }
+    return buildParams(kv);
+}
+}
 
 static QWidget* makeCard(const QString& title, const QString& iconText,
                           const QString& color, QLabel*& valueLbl, QWidget* parent) {
@@ -89,26 +151,18 @@ void HomeWidget::setupUI() {
 
     // 场景快捷切换
     QGroupBox* sceneBox = new QGroupBox("常用场景", this);
-    QHBoxLayout* sceneLay = new QHBoxLayout(sceneBox);
-    auto makeScene = [&](const QString& name, const QString& color) {
-        QPushButton* btn = new QPushButton(name, sceneBox);
-        btn->setFixedHeight(44);
-        btn->setStyleSheet(QString("QPushButton{background:%1;color:white;border-radius:6px;font-size:13px;}"
-                                   "QPushButton:hover{opacity:0.8;}").arg(color));
-        connect(btn, &QPushButton::clicked, [this]{ emit navigateTo(2); });
-        sceneLay->addWidget(btn);
-    };
-    makeScene("🏠 回家模式", "#16a085");
-    makeScene("😴 睡眠模式", "#8e44ad");
-    makeScene("🚶 离家模式", "#e67e22");
-    makeScene("🎬 观影模式", "#2980b9");
+    m_sceneLay = new QHBoxLayout(sceneBox);
+    m_sceneLay->setSpacing(10);
     vl->addWidget(sceneBox);
     vl->addStretch();
+
+    refreshFavoriteScenes();
 }
 
 void HomeWidget::refresh() {
     m_timeLbl->setText(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
     updateStats();
+    refreshFavoriteScenes();
 }
 
 void HomeWidget::updateStats() {
@@ -122,4 +176,173 @@ void HomeWidget::updateStats() {
     m_onlineLbl->setText(QString::number(online));
     m_offlineLbl->setText(QString::number(offline));
     m_alarmLbl->setText(QString::number(alarms.size()));
+}
+
+QList<int> HomeWidget::loadFavoriteSceneIds() const {
+    return parseIds(DatabaseManager::instance()->getSetting(kFavoriteSceneSettingKey));
+}
+
+void HomeWidget::saveFavoriteSceneIds(const QList<int>& ids) const {
+    DatabaseManager::instance()->setSetting(kFavoriteSceneSettingKey, joinIds(ids));
+}
+
+void HomeWidget::refreshFavoriteScenes() {
+    if (!m_sceneLay) {
+        return;
+    }
+
+    while (QLayoutItem* item = m_sceneLay->takeAt(0)) {
+        if (QWidget* w = item->widget()) {
+            w->deleteLater();
+        }
+        delete item;
+    }
+
+    const auto scenes = DatabaseManager::instance()->getScenes();
+    QMap<int, QString> sceneIdName;
+    for (const auto& s : scenes) {
+        sceneIdName[s.value("id").toInt()] = s.value("name").toString();
+    }
+
+    QList<int> favoriteIds = loadFavoriteSceneIds();
+    QList<int> validIds;
+    for (const int id : favoriteIds) {
+        if (sceneIdName.contains(id)) {
+            validIds.append(id);
+        }
+    }
+
+    if (validIds != favoriteIds) {
+        saveFavoriteSceneIds(validIds);
+    }
+
+    if (validIds.isEmpty() && !scenes.isEmpty()) {
+        for (int i = 0; i < scenes.size() && i < 4; ++i) {
+            validIds.append(scenes.at(i).value("id").toInt());
+        }
+        saveFavoriteSceneIds(validIds);
+    }
+
+    for (const int id : validIds) {
+        const QString sceneName = sceneIdName.value(id);
+        if (sceneName.isEmpty()) {
+            continue;
+        }
+
+        QPushButton* btn = new QPushButton("🎬 " + sceneName, this);
+        btn->setFixedSize(kSceneCardSize);
+        btn->setStyleSheet(QString("QPushButton{background:%1;color:white;border-radius:6px;font-size:13px;padding:0 10px;}"
+                                   "QPushButton:hover{background:#2a5fbf;}"
+                                   "QPushButton:pressed{background:#173a79;}")
+                               .arg(kSceneCardColor));
+        connect(btn, &QPushButton::clicked, [this, id] { activateFavoriteScene(id); });
+        m_sceneLay->addWidget(btn);
+    }
+
+    QPushButton* addCard = new QPushButton("＋", this);
+    addCard->setToolTip("编辑常用场景（添加或删除）");
+    addCard->setFixedSize(kSceneCardSize);
+    addCard->setStyleSheet(QString(
+        "QPushButton{background:%1;color:white;border-radius:6px;font-size:24px;font-weight:bold;}"
+        "QPushButton:hover{background:#2a5fbf;}"
+        "QPushButton:pressed{background:#173a79;}")
+        .arg(kSceneCardColor));
+    connect(addCard, &QPushButton::clicked, this, &HomeWidget::openFavoriteSceneEditor);
+    m_sceneLay->addWidget(addCard);
+    m_sceneLay->addStretch();
+}
+
+void HomeWidget::activateFavoriteScene(int sceneId) {
+    const auto sceneDevices = DatabaseManager::instance()->getSceneDevices(sceneId);
+    if (sceneDevices.isEmpty()) {
+        QMessageBox::information(this, "提示", "该场景未绑定任何设备动作。");
+        return;
+    }
+
+    int executed = 0;
+    int skippedOffline = 0;
+    for (const auto& d : sceneDevices) {
+        const int deviceId = d.value("device_id").toInt();
+        const auto device = DatabaseManager::instance()->getDeviceById(deviceId);
+        if (device.isEmpty()) {
+            continue;
+        }
+
+        if (device.value("status").toString() != "online") {
+            DatabaseManager::instance()->addOperationLog(
+                m_username,
+                d.value("name").toString(),
+                "场景跳过:" + d.value("action").toString(),
+                "offline_skip");
+            ++skippedOffline;
+            continue;
+        }
+
+        const QString merged = d.value("params").toString().isEmpty()
+                                   ? device.value("params").toString()
+                                   : mergeParams(device.value("params").toString(), d.value("params").toString());
+
+        DatabaseManager::instance()->updateDeviceStatus(deviceId, "online", merged);
+        DatabaseManager::instance()->addOperationLog(
+            m_username,
+            d.value("name").toString(),
+            "首页场景触发:" + d.value("action").toString(),
+            "success");
+        ++executed;
+    }
+
+    QMessageBox::information(this,
+                             "场景激活",
+                             QString("场景已激活，执行 %1 个操作，跳过离线设备 %2 个。")
+                                 .arg(executed)
+                                 .arg(skippedOffline));
+    refresh();
+}
+
+void HomeWidget::openFavoriteSceneEditor() {
+    const auto scenes = DatabaseManager::instance()->getScenes();
+    if (scenes.isEmpty()) {
+        QMessageBox::information(this, "提示", "当前没有可选场景，请先在场景模式中创建场景。");
+        return;
+    }
+
+    QDialog dlg(this);
+    dlg.setWindowTitle("编辑常用场景");
+    dlg.setMinimumWidth(360);
+
+    QVBoxLayout* vl = new QVBoxLayout(&dlg);
+    QLabel* tip = new QLabel("勾选要在首页展示的常用场景（仅可选择当前已有场景）", &dlg);
+    tip->setWordWrap(true);
+    tip->setStyleSheet("color:#475569;");
+    vl->addWidget(tip);
+
+    QList<int> selectedIds = loadFavoriteSceneIds();
+    QList<QCheckBox*> boxes;
+    for (const auto& s : scenes) {
+        const int id = s.value("id").toInt();
+        QCheckBox* cb = new QCheckBox(s.value("name").toString(), &dlg);
+        cb->setChecked(selectedIds.contains(id));
+        cb->setProperty("sceneId", id);
+        vl->addWidget(cb);
+        boxes.append(cb);
+    }
+
+    QDialogButtonBox* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+    vl->addWidget(bb);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, [&] {
+        QList<int> nextIds;
+        for (QCheckBox* cb : boxes) {
+            if (!cb->isChecked()) {
+                continue;
+            }
+            nextIds.append(cb->property("sceneId").toInt());
+        }
+        saveFavoriteSceneIds(nextIds);
+        dlg.accept();
+    });
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+
+    if (dlg.exec() == QDialog::Accepted) {
+        refreshFavoriteScenes();
+    }
 }
