@@ -1,6 +1,7 @@
 #include "settingswidget.h"
 #include "databasemanager.h"
 
+#include <QApplication>      // 新增：用于全局样式设置
 #include <QComboBox>
 #include <QFormLayout>
 #include <QLabel>
@@ -13,6 +14,8 @@
 
 SettingsWidget::SettingsWidget(QWidget* parent) : QWidget(parent) {
     setupUI();
+    // 启动时应用当前保存的主题
+    applyTheme(m_themeCombo->currentText());
 }
 
 void SettingsWidget::setupUI() {
@@ -57,5 +60,36 @@ void SettingsWidget::onSaveSettings() {
     DatabaseManager::instance()->setSetting("theme", m_themeCombo->currentText());
     DatabaseManager::instance()->setSetting("refresh_interval", QString::number(m_refreshSpin->value()));
     DatabaseManager::instance()->setSetting("db_path", m_dbPathEdit->text());
+    // 保存后立即应用主题
+    applyTheme(m_themeCombo->currentText());
     QMessageBox::information(this, "成功", "系统设置已保存");
+}
+
+// 新增：根据主题名称设置全局样式表
+void SettingsWidget::applyTheme(const QString& themeName) {
+    if (themeName == "深色主题") {
+        qApp->setStyleSheet(
+            "QWidget { background-color: #2b2b2b; color: #f0f0f0; }"
+            "QPushButton { background-color: #3c3c3c; border: 1px solid #555; padding: 5px; }"
+            "QPushButton:hover { background-color: #4a4a4a; }"
+            "QLineEdit, QComboBox, QSpinBox { background-color: #3c3c3c; color: #f0f0f0; border: 1px solid #555; }"
+            "QHeaderView::section { background-color: #3c3c3c; color: #f0f0f0; }" // 表格头部
+            "QTabWidget::pane { background-color: #2b2b2b; }"
+            "QTabBar::tab { background-color: #3c3c3c; color: #f0f0f0; padding: 6px; }"
+            "QTabBar::tab:selected { background-color: #4a4a4a; }"
+            );
+    } else if (themeName == "浅蓝主题") {
+        qApp->setStyleSheet(
+            "QWidget { background-color: #e6f0fa; color: #1e3a5f; }"
+            "QPushButton { background-color: #3a6ea5; color: white; border: none; padding: 5px; }"
+            "QPushButton:hover { background-color: #2a4f7a; }"
+            "QLineEdit, QComboBox, QSpinBox { background-color: white; color: black; border: 1px solid #3a6ea5; }"
+            "QHeaderView::section { background-color: #3a6ea5; color: white; }"
+            "QTabWidget::pane { background-color: #e6f0fa; }"
+            "QTabBar::tab { background-color: #b0c4de; color: #1e3a5f; padding: 6px; }"
+            "QTabBar::tab:selected { background-color: #e6f0fa; }"
+            );
+    } else { // 默认主题
+        qApp->setStyleSheet(""); // 清空样式表，恢复系统默认
+    }
 }

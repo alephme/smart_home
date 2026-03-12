@@ -11,7 +11,9 @@ private slots:
 
 private:
     void setupUI();
-    class QComboBox*    m_themeCombo    = nullptr;
-    class QSpinBox*     m_refreshSpin   = nullptr;
-    class QLineEdit*    m_dbPathEdit    = nullptr;
+    void applyTheme(const QString& themeName);  // 新增：应用主题
+
+    class QComboBox* m_themeCombo = nullptr;
+    class QSpinBox* m_refreshSpin = nullptr;
+    class QLineEdit* m_dbPathEdit = nullptr;
 };
